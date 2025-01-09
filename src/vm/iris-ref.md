@@ -1,0 +1,126 @@
+# Language Spec
+### Types
+```
+0	:= empty type
+1	:= unit type
+
+?a <-> ?b := isomorphism type
+(?a * ?b) := product type
+(?a + ?b) := sum type
+μx.[?a]   := inductive type
+νx.[?a]   := coinductive type
+-?a       := negative type
+1/?a      := fraction type
+
+nat  := μx.[1 + x]
+int  := (nat + nat)
+bool := (1 + 1)
+list := μx.[1 + (?a * x)]
+```
+
+### Functions
+```
+ID <-> ID         : ?a <-> ?a
+ * Identity; does nothing
+
+ZEROI <-> ZEROE   : ?a <-> (0 + ?a)
+ * Introduce/eliminate sum variant of type 0
+
+SWAPS <-> SWAPS   : (?a + ?b) <-> (?b + ?a)
+ * Swap the two variant types' sides
+ *
+ * lc = # of types on the left-hand side of the sum
+ * rc = # of types on the right-hand side of the sum
+
+ASSRS <-> ASSLS   : ((?a + ?b) + ?c) <-> (?a + (?b + ?c))
+ * Associate inner sum with types on the right or left
+
+UNITI <-> UNITE   : ?a <-> (1 * ?a)
+ * Introduce/eliminate product with unit type
+
+SWAPP <-> SWAPP   : (?a * ?b) <-> (?b * ?a)
+ * Swap the first and second values
+
+ASSRP <-> ASSLP   : ((?a * ?b) * ?c) <-> (?a * (?b * ?c))
+ * Associate inner product with types on the right or left
+
+DIST <-> FACT     : ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
+ * Distribute inner sum over both product values/Factor inner
+ * sum into first value
+ *
+ * lc = # of types on the left-hand side of the sum
+ * rc = # of types on the right-hand side of the sum
+
+FOLD <-> UFOLD    : μx.[?a/b]b <-> μx.[?a]
+ * Fold/unfold value into/out of a coinductive type
+ * n = size of inductive type elements
+
+TX f <-> RX f   : νx.[?a/b]b <-> νx.[?a]
+	where f: ?b <-> ?a
+ * Write/read value in/out of a coinductive type
+ * f = isomorphism (user or machine-defined) to generate/read elements
+```
+
+### Combinators
+```
++{
+ - Sum combinator start
+
++
+ - Delimits the two halves of a sum combinator
+
+}+
+ - Sum combinator end
+
+*{
+ - Product combinator start
+
+*
+ - Delimits the two halves of a product combinator 
+
+}*
+ - Product combinator delimiter
+```
+
+### Control/Memory
+```
+EXPN <-> COLN     : 0 <-> (-?a + ?a)
+ * Reverse type sign and direction of execution
+ *
+ * n = number of types in each side of the sum
+
+EXPF x <-> COLF x : 1 <-> (1/?a * ?a)
+ * Allocate/deallocate new variable
+ * x = name of value being introduced
+
+START <-> END		: ?a <-> ?a
+ * Denotes start/end of function; operationally equivalent to ID
+
+CALL f <-> UNCALL f		: ?a <-> ?b
+	where f: ?a <-> ?b
+ * Invoke function forwards/backwards on datatype
+ * f = name of invoked function, translated to start + end indices in bytecode
+```
+
+## Instruction Encoding
+```
+ * I-Type
+ *
+ * 31                                     0
+ * [            imm            ] [ opcode ]
+ *	            27b		               5b
+ *
+ * Instructions that do not contain additional information or
+ * contain a constant value are represented by the I-Type
+ * encoding. Most IRIS instructions are I-Type encoded.
+
+ * S-Type
+ *
+ * 31                                     0
+ * [0] [    rc    ] [    lc    ] [ opcode ]
+ *  1b      13b	         13b	       5b
+ *
+ * The S-Type encoding is for certain sum type
+ * instructions, which contain the number of variants
+ * on the left and right hand sides of the type.
+```
