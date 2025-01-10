@@ -105,64 +105,18 @@ pub fn asslp<'guard>(
     val.set_snd(c);
 }
 
+// TODO: Rewrite
 pub fn dist<'guard>(
     val: ScopedPtr<'guard, Product<Sum<()>, ()>>,
-    lc: u16,
-    rc: u16,
     mem: &'guard MutatorView
 ) -> Result<ScopedPtr<'guard, Sum<Product<(), ()>>>, RuntimeError>
 {
     let sum = val.fst(mem);
     let tag = sum.tag();
 
-    if tag <= (lc - 1) as u32 {
-        if lc == 1 {
-            let new_sum = unsafe {
-                sum.cast::<Sum<Product<(), ()>>>(mem)
-            };
-            let new_val = unsafe {
-                val.cast::<Product<(), ()>>(mem)
-            };
-
-            new_val.set_fst(sum.data(mem));
-            new_sum.set_data(new_val);
-            new_sum.set_tag(0);
-
-            Ok(new_sum)
-        } else {
-            val.set_fst(sum);
-            let new_sum = mem.alloc(Sum::new(0, CellPtr::new_with(val)))?;
-
-            Ok(unsafe {
-                new_sum.cast::<Sum<Product<(), ()>>>(mem)
-            })
-        }
-    } else {
-        if rc == 1 {
-            let new_sum = unsafe {
-                sum.cast::<Sum<Product<(), ()>>>(mem)
-            };
-            let new_val = unsafe {
-                val.cast::<Product<(), ()>>(mem)
-            };
-
-            new_val.set_fst(sum.data(mem));
-            new_sum.set_data(new_val);
-            new_sum.set_tag(1);
-
-            Ok(new_sum)
-        } else {
-            sum.set_tag(tag - lc as u32);
-            val.set_fst(sum);
-            let new_sum = mem.alloc(Sum::new(1, CellPtr::new_with(val)))?;
-
-            Ok(unsafe {
-                new_sum.cast::<Sum<Product<(), ()>>>(mem)
-            })
-        }
-    }
 }
 
+// TODO: Rewrite
 pub fn fact<'guard>(
     val: ScopedPtr<'guard, Sum<Product<(), ()>>>,
     lc: u16,
@@ -173,42 +127,11 @@ pub fn fact<'guard>(
     let prod = val.data(mem);
     let tag = val.tag();
 
-    if tag == 0 {
-        if lc == 1 {
-            let fst = prod.fst(mem);
-            let cast_val = unsafe { val.cast::<Sum<()>>(mem) };
-            cast_val.set_data(fst);
-            prod.set_fst(cast_val.as_untyped(mem));
-
-            Ok(prod)
-        } else {
-            mem.dealloc(val)?;
-
-            Ok(prod)
-        }
-    } else {
-        if rc == 1 {
-            let cast_val = unsafe { val.cast::<Sum<()>>(mem) };
-            let fst = prod.fst(mem);
-            cast_val.set_data(fst);
-            cast_val.set_tag(lc as u32);
-            prod.set_fst(cast_val.as_untyped(mem));
-
-            Ok(prod)
-        } else {
-            let fst = prod.fst(mem);
-            let cast_fst = unsafe { fst.cast::<Sum<()>>(mem) };
-            cast_fst.set_tag(cast_fst.tag() + lc as u32);
-            mem.dealloc(val)?;
-
-            Ok(prod)
-        }
-    }
 }
 
+// TODO: Rewrite
 pub fn expn<'guard>(
     val: ScopedPtr<'guard, Sum<()>>,
-    div: Nat,
     mem: &'guard MutatorView
 ) -> Result<ScopedPtr<'guard, Sum<()>>, RuntimeError>
 {
@@ -246,6 +169,14 @@ pub fn expn<'guard>(
             Ok(unsafe { sum.cast::<Sum<()>>(mem) })
         }
     }
+}
+
+pub fn expn<'guard>(
+    val: ScopedPtr<'guard, Sum<()>>,
+    mem: &'guard MutatorView
+) -> Result<ScopedPtr<'guard, Sum<()>>, RuntimeError>
+{
+    // TODO: Write
 }
 
 pub fn expf<'guard>(frac: &Fraction, mem: &'guard MutatorView)

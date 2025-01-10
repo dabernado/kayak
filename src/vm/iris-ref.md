@@ -86,6 +86,7 @@ START <-> END		  		: a <-> a
 CALL f <-> UNCALL f	  		: a <-> b
 	where f: a <-> b
  * Invoke function forwards/backwards on datatype
+<<<<<<< HEAD
  * f = name of invoked function, translated to start + end indices in bytecode
 
 SPAWN f x <-> RETURN f x	: a <-> a

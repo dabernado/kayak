@@ -19,7 +19,7 @@ impl Print for Zero {
         &self,
         _guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
-    ) -> fmt::Result { write!(f, "*") }
+    ) -> fmt::Result { write!(f, "#") }
 }
 
 // for rust typechecking
@@ -142,11 +142,11 @@ pub struct Sum<O: AllocObject> {
 impl<O: AllocObject> AllocObject for Sum<O> {}
 
 impl<O: AllocObject> Sum<O> {
-    pub fn new(tag: Nat, data: CellPtr<O>) -> Sum<O> {
+    pub fn new(tag: Bool, data: CellPtr<O>) -> Sum<O> {
         Sum { tag: Cell::new(tag), data }
     }
 
-    pub fn set_tag(&self, tag: Nat) {
+    pub fn set_tag(&self, tag: Bool) {
         self.tag.set(tag);
     }
 
@@ -154,7 +154,7 @@ impl<O: AllocObject> Sum<O> {
         self.data.set(ptr);
     }
 
-    pub fn tag(&self) -> Nat { self.tag.get()}
+    pub fn tag(&self) -> Bool { self.tag.get()}
     pub fn data<'guard>(&self, guard: &'guard dyn MutatorScope)
         -> ScopedPtr<'guard, O>
     {
@@ -168,7 +168,13 @@ impl<O: AllocObject + Print> Print for Sum<O> {
         guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
-        write!(f, "e{} ", self.tag.get())?;
+        let tag = self.tag.get();
+        if !tag {
+            write!(f, "left ")?;
+        } else {
+            write!(f, "right ")?;
+        }
+        
         write!(f, "({})", self.data.get(guard))
     }
 }
@@ -221,3 +227,5 @@ impl<F: AllocObject + Print, S: AllocObject + Print> Print for Product<F, S> {
 
 // TODO: Switch to packed implementation
 pub type Inductive<O> = Array<CellPtr<O>>;
+
+// TODO: Implement coinductive type struct

@@ -2,18 +2,52 @@ use std::cell::Cell;
 
 use crate::alloc::api::AllocObject;
 use crate::array::{ArraySize, IndexedContainer};
-use crate::constants::*;
-use crate::data::{Nat, Product, Sum, Inductive};
+use crate::data::{Nat, Int, Product, Sum, Inductive};
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorScope, MutatorView};
 use crate::safeptr::{ScopedPtr, CellPtr};
 
 /*
+ * Instructions
+ */
+pub enum Instruction {
+    Id,
+    Zeroi,
+    Zeroe,
+    Swaps,
+    Assls,
+    Assrs,
+    Uniti,
+    Unite,
+    Swapp,
+    Asslp,
+    Assrp,
+    Dist,
+    Fact,
+    Fold,
+    Ufold,
+    Tx(Int),
+    Rx(Int),
+    Expn,
+    Coln,
+    Expf,
+    Colf,
+    Start,
+    End,
+    Call(Int),
+    Uncall(Int),
+    StartSum,
+    SplitSum,
+    EndSum,
+    StartProd,
+    SplitProd,
+    EndProd,
+}
+
+/*
  * Iris Datatypes
  */
-pub type Opcode = Nat;
-pub type Instruction<O> = Product<Opcode, Sum<O>>;
-pub type Function = Product<Metadata, Inductive<Instruction<()>>>;
+pub type Function = Product<Metadata, Inductive<Opcode>>;
 
 #[derive(Clone)]
 pub struct Continuation {

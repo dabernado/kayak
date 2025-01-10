@@ -1,7 +1,6 @@
 use crate::alloc::api::AllocObject;
 use crate::array::{Array, ArraySize, StackContainer};
 use crate::bytecode::*;
-use crate::constants::*;
 use crate::context::{Context, ContextStack};
 use crate::data::*;
 use crate::error::{RuntimeError, ErrorKind};
@@ -188,23 +187,23 @@ impl Thread {
         let opcode = get_opcode(op, cont.direction());
 
         match opcode {
-            OP_ID | OP_ID_R => {}, // identity
-            OP_ZEROI => {
+            Id => {}, // identity
+            Zeroi => {
                 let new_data = mem.alloc(zeroi(data))?;
                 self.data.set(new_data.as_untyped(mem));
             },
-            OP_ZEROE => {
+            Zeroe => {
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
                 let inner = zeroe(cast_ptr, mem);
 
                 self.data.set(inner);
                 mem.dealloc(cast_ptr)?;
             },
-            OP_UNITI => {
+            Uniti => {
                 let new_data = mem.alloc(uniti(data, mem)?)?;
                 self.data.set(new_data.as_untyped(mem));
             },
-            OP_UNITE => {
+            Unite => {
                 let cast_ptr = unsafe { data.cast::<Product<Unit, ()>>(mem) };
                 let inner = unite(cast_ptr, mem);
 
@@ -212,26 +211,26 @@ impl Thread {
                 mem.dealloc(cast_ptr.fst(mem))?;
                 mem.dealloc(cast_ptr)?;
             },
-            OP_SWAPP | OP_SWAPP_R => {
+            Swapp => {
                 let cast_ptr = unsafe { data.cast::<Product<(), ()>>(mem) };
 
                 swapp(&cast_ptr, mem);
             },
-            OP_ASSRP => {
+            Assrp => {
                 let cast_ptr = unsafe {
                     data.cast::<Product<(), ()>>(mem)
                 };
 
                 assrp(&cast_ptr, mem);
             },
-            OP_ASSLP => {
+            Asslp => {
                 let cast_ptr = unsafe {
                     data.cast::<Product<(), ()>>(mem)
                 };
 
                 asslp(&cast_ptr, mem);
             },
-            OP_SWAPS | OP_SWAPS_R => {
+            Swaps => {
                 let (lc, rc) = decode_s(op);
                 let cast_ptr = unsafe {
                     data.cast::<Sum<()>>(mem)
@@ -239,8 +238,9 @@ impl Thread {
 
                 swaps(&cast_ptr, lc, rc, mem);
             },
-            OP_ASSRS | OP_ASSLS => {}, // op-equivalent to ID
-            OP_DIST => {
+            Assrs => {}, // TODO: Implement
+            Assls => {}, // TODO: Implement
+            Dist => {
                 let (lc, rc) = decode_s(op);
                 let cast_ptr = unsafe {
                     data.cast::<Product<Sum<()>, ()>>(mem)
@@ -249,7 +249,7 @@ impl Thread {
                 let sum = dist(cast_ptr, lc, rc, mem)?;
                 self.data.set(sum.as_untyped(mem));
             },
-            OP_FACT => {
+            Fact => {
                 let (lc, rc) = decode_s(op);
                 let cast_ptr = unsafe {
                     data.cast::<Sum<Product<(), ()>>>(mem)
@@ -258,7 +258,7 @@ impl Thread {
                 let prod = fact(cast_ptr, lc, rc, mem)?;
                 self.data.set(prod.as_untyped(mem));
             },
-            OP_FOLD => {
+            Fold => {
                 let is_nat = decode_i(op);
 
                 if is_nat == 0 {
@@ -277,7 +277,7 @@ impl Thread {
                     self.data.set(new_val.as_untyped(mem));
                 }
             },
-            OP_UFOLD => {
+            Unfold => {
                 let is_nat = decode_i(op);
 
                 if is_nat == 0 {
@@ -296,9 +296,9 @@ impl Thread {
                     self.data.set(new_val.as_untyped(mem));
                 }
             },
-            OP_GEN => {}, // TODO: add coinduction
-            OP_REC => {}, // TODO: add coinduction
-            OP_EXPN => {
+            Tx => {}, // TODO: add coinduction
+            Rx => {}, // TODO: add coinduction
+            Expn => {
                 let div = decode_i(op);
                 if cont.direction() {
                     let cast_ptr = unsafe {
@@ -312,7 +312,7 @@ impl Thread {
                     return Err(RuntimeError::new(ErrorKind::ExpectedZero));
                 }
             },
-            OP_COLN => {
+            Coln => {
                 let div = decode_i(op);
                 if !cont.direction() {
                     let cast_ptr = unsafe {
@@ -328,9 +328,9 @@ impl Thread {
                     return Err(RuntimeError::new(ErrorKind::ExpectedZero));
                 }
             },
-            OP_EXPF => {}, // TODO: reimplement
-            OP_COLF => {}, // TODO: reimplement
-            OP_CALL => {
+            Expf => {}, // TODO: reimplement
+            Colf => {}, // TODO: reimplement
+            Call => {
                 let dir = cont.direction();
                 let not = if !dir { false } else { true };
                 let new_cxt = Context::Call {
@@ -348,7 +348,7 @@ impl Thread {
                 self.call_func(mem, *start, *end, not);
                 cxt_stack.push(mem, new_cxt)?;
             },
-            OP_UNCALL => {
+            Uncall => {
                 let dir = cont.direction();
                 let not = if dir { false } else { true };
                 let new_cxt = Context::Call {
@@ -366,8 +366,8 @@ impl Thread {
                 self.call_func(mem, *start, *end, not);
                 cxt_stack.push(mem, new_cxt)?;
             },
-            OP_START => {}, // op-equivalent to ID
-            OP_END => {
+            Start => {}, // op-equivalent to ID
+            End => {
                 match cxt_stack.top(mem)? {
                     Context::Call { not, ret } => {
                         if not { cont.reverse(); }
@@ -377,7 +377,7 @@ impl Thread {
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
                 }
             },
-            OP_SUMS => {
+            StartSum => {
                 let div = decode_i(op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
                 let cast_arg = unsafe {
@@ -431,7 +431,8 @@ impl Thread {
                     }
                 }
             }
-            OP_SUME => {
+            SplitSum => {} // TODO: Implement
+            EndSum => {
                 let sum_cxt = cxt_stack.pop(mem)?;
 
                 match sum_cxt {
@@ -446,7 +447,7 @@ impl Thread {
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
                 }
             },
-            OP_PRODS => {
+            StartProd => {
                 let cast_ptr = unsafe { data.cast::<Product<(), ()>>(mem) };
                 let cast_arg = unsafe { arg.cast::<Sum<Nat>>(mem) };
                 let jmp = cast_arg.data(mem);
@@ -471,7 +472,8 @@ impl Thread {
                     self.data.set(cast_ptr.snd(mem));
                 }
             }
-            OP_PRODE => {
+            SplitProd => {} // TODO: Implement
+            EndProd => {
                 let sum_cxt = cxt_stack.pop(mem)?;
 
                 match sum_cxt {
