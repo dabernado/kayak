@@ -69,7 +69,7 @@ impl Print for Int {
 
 /*
  * bool is implemented in IRIS via the
- * 1 + 1 type
+ * 1 + 1 type, this is only for internal use
 */
 pub type Bool = bool;
 impl AllocObject for Bool {}
@@ -136,7 +136,7 @@ impl<O: AllocObject + Print> Print for Negative<O> {
 
 #[derive(Clone, Debug)]
 pub struct Sum<O: AllocObject> {
-    tag: Cell<Nat>,
+    tag: Cell<Bool>,
     data: CellPtr<O>,
 }
 impl<O: AllocObject> AllocObject for Sum<O> {}

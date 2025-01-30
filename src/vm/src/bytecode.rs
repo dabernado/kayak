@@ -13,7 +13,7 @@ use crate::safeptr::{ScopedPtr, CellPtr};
  */
 pub type Opcode = Nat;
 pub type Instruction<O> = Product<Opcode, Sum<O>>;
-pub type Function = Inductive<Instruction<()>>;
+pub type Function = Product<Metadata, Inductive<Instruction<()>>>;
 
 #[derive(Clone)]
 pub struct Continuation {
@@ -80,30 +80,11 @@ pub fn decode_i(instr: Opcode) -> u32 {
     (instr & I_MASK) >> 5
 }
 
-pub fn decode_s(instr: Opcode) -> (u16, u16) {
-    (
-        ((instr & S_LC_MASK) >> 5) as u16,
-        ((instr & S_RC_MASK) >> 18) as u16
-    )
-}
-
 // Encoding Functions
 pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, RuntimeError> {
     // check if within bounds
     if imm <= MAX_ITYPE_FIELD {
         Ok((imm << 5) ^ (op as u32))
-    } else {
-        Err(RuntimeError::new(ErrorKind::IntOverflow))
-    }
-}
-
-pub fn encode_s(op: u8, lc: u16, rc: u16) -> Result<Opcode, RuntimeError> {
-    // check if within bounds
-    if lc <= MAX_CTYPE_FIELD && rc <= MAX_CTYPE_FIELD {
-        let padded_rc = (rc as u32) << 18;
-        let padded_lc = (lc as u32) << 5;
-
-        Ok(((0 ^ padded_rc) ^ padded_lc) ^ (op as u32))
     } else {
         Err(RuntimeError::new(ErrorKind::IntOverflow))
     }

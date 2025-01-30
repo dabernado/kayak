@@ -4,103 +4,99 @@
 0	:= empty type
 1	:= unit type
 
-?a <-> ?b := isomorphism type
-(?a * ?b) := product type
-(?a + ?b) := sum type
-μx.[?a]   := inductive type
-νx.[?a]   := coinductive type
--?a       := negative type
-1/?a      := fraction type
+a <-> b := isomorphism type
+(a * b) := product type
+(a + b) := sum type
+μx.[a]   := induction type
+-a       := negative type
 
 nat  := μx.[1 + x]
 int  := (nat + nat)
 bool := (1 + 1)
-list := μx.[1 + (?a * x)]
+list := μx.[1 + (a * x)]
 ```
 
 ### Functions
 ```
-ID <-> ID         : ?a <-> ?a
+ID <-> ID         : a <-> a
  * Identity; does nothing
 
-ZEROI <-> ZEROE   : ?a <-> (0 + ?a)
+ZEROI <-> ZEROE   : a <-> (0 + a)
  * Introduce/eliminate sum variant of type 0
 
-SWAPS <-> SWAPS   : (?a + ?b) <-> (?b + ?a)
+SWAPS <-> SWAPS   : (a + b) <-> (b + a)
  * Swap the two variant types' sides
- *
- * lc = # of types on the left-hand side of the sum
- * rc = # of types on the right-hand side of the sum
 
-ASSRS <-> ASSLS   : ((?a + ?b) + ?c) <-> (?a + (?b + ?c))
+ASSRS <-> ASSLS   : ((a + b) + c) <-> (a + (b + c))
  * Associate inner sum with types on the right or left
 
-UNITI <-> UNITE   : ?a <-> (1 * ?a)
+UNITI <-> UNITE   : a <-> (1 * a)
  * Introduce/eliminate product with unit type
 
-SWAPP <-> SWAPP   : (?a * ?b) <-> (?b * ?a)
+SWAPP <-> SWAPP   : (a * b) <-> (b * a)
  * Swap the first and second values
 
-ASSRP <-> ASSLP   : ((?a * ?b) * ?c) <-> (?a * (?b * ?c))
+ASSRP <-> ASSLP   : ((a * b) * c) <-> (a * (b * c))
  * Associate inner product with types on the right or left
 
-DIST <-> FACT     : ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
+DIST <-> FACT     : ((a + b) * c) <-> ((a * c) + (b * c))
  * Distribute inner sum over both product values/Factor inner
  * sum into first value
- *
- * lc = # of types on the left-hand side of the sum
- * rc = # of types on the right-hand side of the sum
 
-FOLD <-> UFOLD    : μx.[?a/b]b <-> μx.[?a]
- * Fold/unfold value into/out of a coinductive type
+FOLD <-> UFOLD    : μx.[a/b]b <-> μx.[a]
+ * Fold/unfold value into/out of an induction type
  * n = size of inductive type elements
-
-TX f <-> RX f   : νx.[?a/b]b <-> νx.[?a]
-	where f: ?b <-> ?a
- * Write/read value in/out of a coinductive type
- * f = isomorphism (user or machine-defined) to generate/read elements
 ```
 
 ### Combinators
 ```
-+{
++(
  - Sum combinator start
 
 +
  - Delimits the two halves of a sum combinator
+ - Not an actual instruction
 
-}+
- - Sum combinator end
-
-*{
+*(
  - Product combinator start
 
 *
  - Delimits the two halves of a product combinator 
+ - Not an actual instruction
 
-}*
- - Product combinator delimiter
+)
+ - Sum/Product combinator end
 ```
 
-### Control/Memory
+### Control
 ```
-EXPN <-> COLN     : 0 <-> (-?a + ?a)
+EXPN <-> COLN     	  		: 0 <-> (-a + a)
  * Reverse type sign and direction of execution
  *
  * n = number of types in each side of the sum
 
-EXPF x <-> COLF x : 1 <-> (1/?a * ?a)
- * Allocate/deallocate new variable
- * x = name of value being introduced
+RLSE x <-> BIND x	  		: a <-> 1
+ * Releases/receives a signal x of type a and removes it from/introduces it to the program's data
+ *
+ * x = name of signal
 
-START <-> END		: ?a <-> ?a
+START <-> END		  		: a <-> a
  * Denotes start/end of function; operationally equivalent to ID
 
-CALL f <-> UNCALL f		: ?a <-> ?b
-	where f: ?a <-> ?b
+CALL f <-> UNCALL f	  		: a <-> b
+	where f: a <-> b
  * Invoke function forwards/backwards on datatype
  * f = name of invoked function, translated to start + end indices in bytecode
+
+SPAWN f x <-> RETURN f x	: a <-> a
+ * Spawns a new process as running a function f with a signal as its argument; as inverse, waits for some process to finish and bind its result to a signal
+ *
+ * f = function for the new process to run
+ * x = name of signal to be used as argument to f
 ```
+
+### Type Restrictions
+- Functions cannot be defined with negative types as input/output types
 
 ## Instruction Encoding
 ```
@@ -112,15 +108,5 @@ CALL f <-> UNCALL f		: ?a <-> ?b
  *
  * Instructions that do not contain additional information or
  * contain a constant value are represented by the I-Type
- * encoding. Most IRIS instructions are I-Type encoded.
-
- * S-Type
- *
- * 31                                     0
- * [0] [    rc    ] [    lc    ] [ opcode ]
- *  1b      13b	         13b	       5b
- *
- * The S-Type encoding is for certain sum type
- * instructions, which contain the number of variants
- * on the left and right hand sides of the type.
+ * encoding. All IRIS instructions are I-Type encoded.
 ```
