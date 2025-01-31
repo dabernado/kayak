@@ -1,5 +1,98 @@
 ## Kayak Standard Library
-### Core Language (defined in compiler)
+### Syntax (defined in compiler)
+- expressions
+    - `( )`
+
+- list comprehension
+
+- signals
+    - `^x`
+
+- constants
+    - units:
+    ```
+    UNIT :: 1
+    UNIT = ()
+    ```
+
+    - nats:
+    ```
+    ID :: nat
+    ID = 8
+    ```
+        - chars:
+        ```
+        CHAR :: char
+        char = 'h
+        ```
+
+    - sums:
+    ```
+    SUM_RIGHT :: (nat + 1)
+    SUM_RIGHT = right ()
+    ```
+        - booleans:
+        ```
+        FLAG :: bool
+        FLAG = false
+        ```
+        - integers:
+        ```
+        KEY :: int
+        KEY = -24
+        ```
+
+    - products:
+    ```
+    NUM_PAIR :: (nat * nat)
+    NUM_PAIR = (4, 6)
+    ```
+
+    - lists:
+    ```
+    NUM_LIST :: [nat]
+    NUM_LIST = [0, 1, 2, 3, 4]
+    ```
+        - strings: 
+        ```
+        USER :: str
+        USER = "username"
+        ```
+
+- function definitions
+    - ```
+    myFunc :: a <-> b
+    myFunc = swapp changeVal zeroi
+    ```
+
+- combinator definitions
+    - ```
+    trace f :: b <-> c
+        where f :: (a + b) <-> (a + c)
+    trace f = zeroi (expn | id) assocrs (id | f) assocls (coln | id) zeroe
+    ```
+
+- arrow definitions
+    - ```
+    deleteVal :: a ~> 1
+    deleteVal = arr myFunc >> delete
+    ```
+
+### Core Types (defined in compiler)
+- `0` (zero)
+- `1` (unit)
+- `a + b` (sums)
+- `a * b` (products)
+- `[a]` (lists)
+- `nat` (natural numbers)
+- `int` (nat + nat)
+- `char` (nat)
+- `bool` (1 + 1)
+- `str` ([char])
+- `a <-> b` (isomorphisms)
+- `a ~> b` (arrows)
+
+### Core Functions (defined in compiler)
 - `id`
 - `zeroi`, `zeroe`
 - `swaps`
@@ -14,15 +107,33 @@
     - `^` symbol denotes a name
     - if called without a symbol name and current value in scope is a string, the string is used as the signal name
 - `spawn f ^x`, `return f ^x`
-- `( )` (expression)
 - `( | )` (sum combinator)
 - `( , )` (product combinator)
+
+### Core Combinators (defined in compiler)
 - `sym f`
     - inverts the following function
     - compiles to `UNCALL` or the inverse of `f` if `f` is a core function
 
+### Core Arrows (dynamically defined in compiler)
+- `spawnArr a ^x`, `returnArr a ^x`
+    - spawn + return processes which run arrows
+
+### Core Arrow Combinators (defined in compiler)
+- `>>`
+    - composes two arrows together
+    - example: `create >> delete`
+- `arr f`
+    - changes type of iso `f` to an arrow so that it can be sequenced with arrows
+- `first a`
+    - applies arrow `a` to the first value of a product type
+- `left a`
+    - applies arrow `a` to a left value of a sum type
+
+### Functions
+
 ### Combinators
-- `loop f`
+- `trace f`
     - additive trace, implements looping
     - defined as `zeroi (expn | id) assocrs (id | f) assocls (coln | id) zeroe`
 - `neg f`
@@ -32,14 +143,15 @@
     - if-statement which takes `(bool * a)` as an argument, and applies f on a if the bool is `true` and g if the bool is `false`
     - defined as `distrib ((id, f) | (id, g)) factor`
 
+### Arrow Combinators
+- `second a`
+    - defined as `(arr swapp) >> first a >> (arr swapp)`
+- `right a`
+    - defined as `(arr swaps) >> left a >> (arr swaps)`
+
 ### High-level Language Constructs
 #### Combinators
 - Combinators are functions that take a function as an argument and apply them somewhere in their body
-- They can be defined like so:
-    ```
-    trace f :: b <-> c
-        where f :: (a + b) <-> (a + c)
-    ```
 
 #### Computational Reflection
 - What does "code-as-data" look like in Kayak?
