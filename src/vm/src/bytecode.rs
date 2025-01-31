@@ -2,7 +2,7 @@ use std::cell::Cell;
 
 use crate::alloc::api::AllocObject;
 use crate::array::{ArraySize, IndexedContainer};
-use crate::data::{Nat, Int, Product, Sum, Inductive};
+use crate::data::{Nat, Bool, Product, Sum, Inductive};
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorScope, MutatorView};
 use crate::safeptr::{ScopedPtr, CellPtr};
@@ -24,8 +24,6 @@ pub enum Instruction {
     Assrp,
     Dist,
     Fact,
-    Fold,
-    Ufold,
     Expn,
     Coln,
     Start,
@@ -36,8 +34,14 @@ pub enum Instruction {
     StartProd,
     SplitProd,
     EndProd,
-    Call(&Function),
-    Uncall(&Function),
+    Fold(Bool),
+    Ufold(Bool),
+    Call(Nat),
+    Uncall(Nat),
+    Release(&str),
+    Bind(&str),
+    Spawn((Nat, &str)),
+    Return((Nat, &str))
 }
 
 /*

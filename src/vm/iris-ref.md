@@ -77,6 +77,7 @@ EXPN <-> COLN     	  		: 0 <-> (-a + a)
 
 RLSE x <-> BIND x	  		: a <-> 1
  * Releases/receives a signal x of type a and removes it from/introduces it to the program's data
+ * A bind will wait for the signal x to be released before continuing execution of the function
  *
  * x = name of signal
 
@@ -86,7 +87,6 @@ START <-> END		  		: a <-> a
 CALL f <-> UNCALL f	  		: a <-> b
 	where f: a <-> b
  * Invoke function forwards/backwards on datatype
-<<<<<<< HEAD
  * f = name of invoked function, translated to start + end indices in bytecode
 
 SPAWN f x <-> RETURN f x	: a <-> a

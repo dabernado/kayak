@@ -6,8 +6,8 @@ pub enum IType {
     Zero,
     Unit,
     Nat,
-    Frac(Box<IType>),
     Neg(Box<IType>),
+    Induct(Box<IType>),
     Sum {
         left: Box<IType>,
         right: Box<IType>,

@@ -171,35 +171,12 @@ pub fn expn<'guard>(
     }
 }
 
-pub fn expn<'guard>(
+pub fn coln<'guard>(
     val: ScopedPtr<'guard, Sum<()>>,
     mem: &'guard MutatorView
 ) -> Result<ScopedPtr<'guard, Sum<()>>, RuntimeError>
 {
     // TODO: Write
-}
-
-pub fn expf<'guard>(frac: &Fraction, mem: &'guard MutatorView)
-    -> Result<Product<Fraction, ()>, RuntimeError>
-{
-    let val = mem.alloc_frac(frac.ptr().get(mem), frac.size())?;
-    
-    Ok(Product::new(
-        CellPtr::new(RawPtr::new(frac)),
-        CellPtr::new_with(val)
-    ))
-}
-
-pub fn colf<'guard>(
-    prod: ScopedPtr<'guard, Product<Fraction, ()>>,
-    mem: &'guard MutatorView
-) -> Result<(), RuntimeError>
-{
-    let frac = prod.fst(mem);
-    let val = prod.snd(mem);
-
-    mem.dealloc_frac(frac, val, frac.size())?;
-    mem.dealloc(prod)
 }
 
 pub fn fold<'guard>(
@@ -290,3 +267,5 @@ pub fn unfold_nat<'guard>(
         mem.alloc(Sum::new(1, CellPtr::new_with(val)))
     }
 }
+
+// TODO: Write concurrency ops

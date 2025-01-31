@@ -258,10 +258,8 @@ impl Thread {
                 let prod = fact(cast_ptr, lc, rc, mem)?;
                 self.data.set(prod.as_untyped(mem));
             },
-            Fold => {
-                let is_nat = decode_i(op);
-
-                if is_nat == 0 {
+            Fold(is_nat) => {
+                if is_nat {
                     let cast_ptr = unsafe {
                         data.cast::<Sum<Nat>>(mem)
                     };
@@ -277,10 +275,8 @@ impl Thread {
                     self.data.set(new_val.as_untyped(mem));
                 }
             },
-            Unfold => {
-                let is_nat = decode_i(op);
-
-                if is_nat == 0 {
+            Unfold(is_nat) => {
+                if is_nat {
                     let cast_ptr = unsafe {
                         data.cast::<Nat>(mem)
                     };
@@ -296,8 +292,6 @@ impl Thread {
                     self.data.set(new_val.as_untyped(mem));
                 }
             },
-            Tx => {}, // TODO: add coinduction
-            Rx => {}, // TODO: add coinduction
             Expn => {
                 let div = decode_i(op);
                 if cont.direction() {
@@ -328,9 +322,7 @@ impl Thread {
                     return Err(RuntimeError::new(ErrorKind::ExpectedZero));
                 }
             },
-            Expf => {}, // TODO: reimplement
-            Colf => {}, // TODO: reimplement
-            Call => {
+            Call(func_index) => { // TODO: Reimplement
                 let dir = cont.direction();
                 let not = if !dir { false } else { true };
                 let new_cxt = Context::Call {
@@ -348,7 +340,7 @@ impl Thread {
                 self.call_func(mem, *start, *end, not);
                 cxt_stack.push(mem, new_cxt)?;
             },
-            Uncall => {
+            Uncall(func_index) => { // TODO: Reimplement
                 let dir = cont.direction();
                 let not = if dir { false } else { true };
                 let new_cxt = Context::Call {
@@ -488,6 +480,10 @@ impl Thread {
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
                 }
             },
+            Release(name) => {} //TODO: Implement concurrency
+            Bind(name) => {} //TODO: Implement concurrency
+            Spawn((func_index, name)) => {} //TODO: Implement concurrency
+            Return((func_index, name)) => {} //TODO: Implement concurrency
             _ => {},
         }
 

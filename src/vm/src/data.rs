@@ -10,17 +10,6 @@ use crate::printer::*;
 /*
  * Primitive Types
  */
-// This type should NEVER be instantiated
-pub struct Zero;
-impl AllocObject for Zero {}
-
-impl Print for Zero {
-    fn print<'guard>(
-        &self,
-        _guard: &'guard dyn MutatorScope,
-        f: &mut fmt::Formatter,
-    ) -> fmt::Result { write!(f, "#") }
-}
 
 // for rust typechecking
 impl AllocObject for () {}
@@ -85,33 +74,6 @@ impl Print for Bool {
 /*
  * Algebraic Data Types
  */
-#[derive(Clone, Debug)]
-pub struct Fraction {
-    ptr: UntypedCellPtr,
-    size: Nat
-}
-
-impl AllocObject for Fraction {}
-impl Fraction {
-    pub fn new(ptr: UntypedCellPtr, size: Nat) -> Self {
-        Fraction { ptr, size }
-    }
-
-    pub fn ptr(&self) -> &UntypedCellPtr { &self.ptr }
-    pub fn size(&self) -> Nat { self.size }
-}
-
-impl Print for Fraction {
-    fn print<'guard>(
-        &self,
-        _guard: &'guard dyn MutatorScope,
-        f: &mut fmt::Formatter,
-    ) -> fmt::Result
-    {
-        write!(f, "1/{{object, {} bytes}}", self.size)
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct Negative<O: AllocObject>(CellPtr<O>);
 impl<O: AllocObject> AllocObject for Negative<O> {}
@@ -227,5 +189,3 @@ impl<F: AllocObject + Print, S: AllocObject + Print> Print for Product<F, S> {
 
 // TODO: Switch to packed implementation
 pub type Inductive<O> = Array<CellPtr<O>>;
-
-// TODO: Implement coinductive type struct
