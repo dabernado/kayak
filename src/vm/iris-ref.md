@@ -75,29 +75,31 @@ EXPN <-> COLN     	  		: 0 <-> (-a + a)
  *
  * n = number of types in each side of the sum
 
-RLSE x <-> BIND x	  		: a <-> 1
- * Releases/receives a signal x of type a and removes it from/introduces it to the program's data
- * A bind will wait for the signal x to be released before continuing execution of the function
- *
- * x = name of signal
-
 START <-> END		  		: a <-> a
  * Denotes start/end of function; operationally equivalent to ID
 
-CALL f <-> UNCALL f	  		: a <-> b
-	where f: a <-> b
- * Invoke function forwards/backwards on datatype
- * f = name of invoked function, translated to start + end indices in bytecode
+SEND <-> RECV				: (a * int) <-> 1
+ * Sends a message to another process, or dequeues a message from the mailbox from that process with the sender's id
+ * The id could be a machine-defined function (negative values), another process, or an IPv6 address in integer form
+ * All arrows are implemented via this instruction via operating on a product type, containing the name of the arrow and its input value
 
-SPAWN f x <-> RETURN f x	: a <-> a
- * Spawns a new process as running a function f with a signal as its argument; as inverse, waits for some process to finish and bind its result to a signal
+SPAWN f [i] <-> RETURN f [i]	: a <-> int
+ * Spawns a new process returning its process id, or waits for it to terminate returning its data
  *
- * f = function for the new process to run
- * x = name of signal to be used as argument to f
+ * f = function to run in spawned process
+ * [i] = capabilities from current process capability store to be granted to the new process
 ```
 
 ### Type Restrictions
 - Functions cannot be defined with negative types as input/output types
+
+### Processes
+- Each process contains:
+	- The data structure it operates on
+	- An AST value containing the code it executes
+	- an object-capability store which provides fine-grained access control for the process
+	- The process id from which it was spawned
+- A process cannot kill another process which it did not spawn
 
 ## Instruction Encoding
 ```

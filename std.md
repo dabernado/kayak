@@ -6,10 +6,13 @@
 - list comprehension
     - ???
 
-- signals
-    - `^x`
-
 - constants
+    - "constants" are actually functions that compile down to the type `1 <-> a` instead of just `a`
+        - example: `"test"` compiles down to creating a list of n-folded units to create each character
+    - adding the sym character before a constant implements its inverse
+        - example: `5` compiles to 5 folds, while `-5` compiles to 5 unfolds
+    - is it impossible to create sum type constants?
+
     - units:
     ```
     UNIT :: 1
@@ -40,7 +43,7 @@
         - integers:
         ```
         KEY :: int
-        KEY = -24
+        KEY = left 24
         ```
 
     - products:
@@ -52,7 +55,7 @@
     - lists:
     ```
     NUM_LIST :: [nat]
-    NUM_LIST = [0, 1, 2, 3, 4]
+    NUM_LIST = (0 1 2 3 4)
     ```
         - strings: 
         ```
@@ -104,21 +107,19 @@
 - `distrib`, `factor`
 - `fold`, `unfold`
 - `expn`, `coln`
-- `release ^x`, `bind ^x`
-    - `^` symbol denotes a name
-    - if called without a symbol name and current value in scope is a string, the string is used as the signal name
-- `spawn f ^x`, `return f ^x`
 - `( | )` (sum combinator)
 - `( , )` (product combinator)
 
 ### Core Combinators (defined in compiler)
-- `sym f`
-    - inverts the following function
+- `-f`
+    - sym combinator, inverts the following function
     - compiles to `UNCALL` or the inverse of `f` if `f` is a core function
 
 ### Core Arrows (dynamically defined in compiler)
-- `spawnArr a ^x`, `returnArr a ^x`
-    - spawn + return processes which run arrows
+- `send`, `recv`
+    - takes a product of a processes' address and a value
+    - `send` sends the value as a message to the process, replacing it with a unit value
+    - `recv` deques a message out of the processes mailbox and replaces a unit value with it
 
 ### Core Arrow Combinators (defined in compiler)
 - `>>`
@@ -130,8 +131,14 @@
     - applies arrow `a` to the first value of a product type
 - `left a`
     - applies arrow `a` to a left value of a sum type
+- `spawn a`, `return a`
+    - spawn + return process running arrow `a` with the current value as an argument
+    - `spawn` replaces argument with the new process address
+    - `return` takes a process address and waits for it to terminate, receiving its result in its place
 
 ### Functions
+- `add`, `sub`
+    - takes a product of two nats and adds/subtracts the first nat to/from the second one
 
 ### Combinators
 - `trace f`
@@ -143,6 +150,9 @@
 - `if (f) (g)`
     - if-statement which takes `(bool * a)` as an argument, and applies f on a if the bool is `true` and g if the bool is `false`
     - defined as `distrib ((id, f) | (id, g)) factor`
+- `addc n`, `subc n`
+    - add to/subtract from a number with a constant
+    - defined as `uniti (id, n) add (id, ~n) unite`
 
 ### Arrow Combinators
 - `second a`
@@ -155,28 +165,44 @@
 - Combinators are functions that take a function as an argument and apply them somewhere in their body
 
 #### Computational Reflection
+- Three dimensions of reflection
+    - ante/post computation (generation/quotation)
+        - "ante" being some program that modifies/generates code
+        - "post" being the modified/generated code that is ran, represented as data or actual code
+        - this can be implemented via a macro system + `eval/reval` iso on a code-as-data structure
+            - could these be one and the same via an abstract syntax tree type?
+    - hypo/hyper computation (implementation/interpretation)
+        - "hypo" being some program that implements lower-level constructs in some "hypercomputation"
+            - e.g., a program that decides what kind of memory allocation scheme a program uses
+            - e.g., a program that decides which effect handlers are used by the program it implements
+        - "hyper" being the program that a "hypocomputation" implements
+        - this can be implemented via evaluative reflection + implementation protocols
+            - hyperprograms can send arrow arguments as messages to a hypoprogram running on a separate process
+                - the hypoprogram can dynamically decide which I/O arrows to apply
+                - this corresponds to `simulate`ing a program and its side effects
+    - fore/back computation (manifestation/control)
+        - "fore" being the base program that a user wants to run and interact with
+        - "back" being the metaprogram that controls the "foreprogram"
+            - a 'degenerate, one-shot' example would be a config file that is loaded at runtime
+        - this can be implemented via a more flexible arrow system
+            - controller process can send live control inputs to another running process
+- Migration
+    - updating code in a process while it is still running
+    - moving a process from one machine to another while it is still running
 - What does "code-as-data" look like in Kayak?
-    - `eval` function?
+    - need an AST data type, likely an inductive of a sum type
+    - should we rewrite the VM to operate on this type?
 - How will code be able to modify itself while its running?
-- How can we generate new code in a reversible manner?
+    - reify itself into AST, make changes and then reflect into the AST?
+- How can implement the three dimensions of reflection in a reversible manner?
 - Should reflection be restricted to equivalences between programs?
 
 #### Reversible Concurrency + Distributed Computing
-- Implement with signals + machine-defined arrows
-    - add a `RLSE/BIND` instruction which can send/receive a value of some type
-        - `RLSE` will release a signal of type `?a` with a name of `x`, removing it from the program's data structure
-        - `BIND` will receive a signal of name `x`, remove its name so that it can be re-used, and introduce its value into the program's data structure
-        - how to make this asynchronous?
-            - will make `BIND` wait for its signal to be released before continuing execution at first
-            - but we can probably make it async in the future
-    - can add a `spawn c` function which will compile down to a `RLSE x` on its argument and a `SPAWN f x` on the signal
-        - when a new process is spawned, it binds its argument signal before passing it to its program, and when the program finishes it releases its result to the same signal name
-        - the inverse of `SPAWN f x` is `RETURN f x`, which waits for the output signal of the process to be released before proceeding with a `BIND` on the signal
-        - `SPAWN` copies the execution direction of the current process to the new one, so when executing in reverse and a `RETURN` is flipped into a `SPAWN`, the new process also runs backwards
-    - arrows for communicating with remote processes should be provided by the VM and exposed in the standard library
-        - compiles down to `CALL/UNCALL` ops on VM-defined functions
-            - VM will need to implement practices for making these as reversible as possible, e.g. copying + storing values that are passed to these functions
-        - it is probably a good thing that abstractions for local concurrency and distributed computation are separate, as the first does not introduce effects and the second one does
+- Implement with with actor model send/receive arrows
+    - this is more robust and extensible than the signal model
+    - each message needs to have its sender id associated with it to make this reversible
+    - each process has a list of process ids with which it can use to communicate
+        - process ids can in effect act as capabilities (syndicated actor model)
 
 #### Arrows
 - Arrows generally can be compiled down from a higher-level language into the VM bytecode, given that the language runtime abstracts these information effects
