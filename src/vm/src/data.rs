@@ -14,6 +14,18 @@ use crate::printer::*;
 // for rust typechecking
 impl AllocObject for () {}
 
+// This type should NEVER be instantiated
+pub struct Zero;
+impl AllocObject for Zero {}
+
+impl Print for Zero {
+    fn print<'guard>(
+        &self,
+        _guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result { write!(f, "*") }
+}
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct Unit(u32); // has to represent some kind of data or alloc freaks out
 impl AllocObject for Unit {}
@@ -74,15 +86,15 @@ impl Print for Bool {
 /*
  * Algebraic Data Types
  */
+
+// Negative Types
 #[derive(Clone, Debug)]
 pub struct Negative<O: AllocObject>(CellPtr<O>);
 impl<O: AllocObject> AllocObject for Negative<O> {}
 
 impl<O: AllocObject> Negative<O> {
     pub fn new(data: CellPtr<O>) -> Negative<O> { Negative(data) }
-}
 
-impl<O: AllocObject> Negative<O> {
     pub fn data<'guard>(&self, guard: &'guard dyn MutatorScope)
         -> ScopedPtr<'guard, O>
     { self.0.get(guard) }
@@ -96,51 +108,52 @@ impl<O: AllocObject + Print> Print for Negative<O> {
     ) -> fmt::Result { write!(f, "-{}", self.0.get(guard)) }
 }
 
+// Sum Types
 #[derive(Clone, Debug)]
-pub struct Sum<O: AllocObject> {
-    tag: Cell<Bool>,
-    data: CellPtr<O>,
+pub enum Sum<L: AllocObject, R: AllocObject> {
+    Left(CellPtr<L>),
+    Right(CellPtr<R>),
 }
-impl<O: AllocObject> AllocObject for Sum<O> {}
+impl<L: AllocObject, R: AllocObject> AllocObject for Sum<L, R> {}
 
-impl<O: AllocObject> Sum<O> {
-    pub fn new(tag: Bool, data: CellPtr<O>) -> Sum<O> {
-        Sum { tag: Cell::new(tag), data }
+impl<L: AllocObject, R: AllocObject> Sum<L, R> {
+    // No need for new() method; just initialize as one of the enum options
+
+    pub fn set_data<'guard>(&self, ptr: ScopedPtr<'guard, L>) {
+        self.0.set(ptr);
+    }
+    
+    pub fn set_data<'guard>(&self, ptr: ScopedPtr<'guard, R>) {
+        self.0.set(ptr);
     }
 
-    pub fn set_tag(&self, tag: Bool) {
-        self.tag.set(tag);
-    }
-
-    pub fn set_data<'guard>(&self, ptr: ScopedPtr<'guard, O>) {
-        self.data.set(ptr);
-    }
-
-    pub fn tag(&self) -> Bool { self.tag.get()}
     pub fn data<'guard>(&self, guard: &'guard dyn MutatorScope)
-        -> ScopedPtr<'guard, O>
+        -> ScopedPtr<'guard, L>
     {
-        self.data.get(guard)
+        self.0.get(guard)
+    }
+
+    pub fn data<'guard>(&self, guard: &'guard dyn MutatorScope)
+        -> ScopedPtr<'guard, R>
+    {
+        self.0.get(guard)
     }
 }
 
-impl<O: AllocObject + Print> Print for Sum<O> {
+impl<L: AllocObject + Print, R: AllocObject + Print> Print for Sum<L, R> {
     fn print<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
-        let tag = self.tag.get();
-        if !tag {
-            write!(f, "left ")?;
-        } else {
-            write!(f, "right ")?;
+        match self {
+            Left::(data) => write!(f, "left ({})", data.get(guard)),
+            Right::(data) => write!(f, "right ({})", data.get(guard)),
         }
-        
-        write!(f, "({})", self.data.get(guard))
     }
 }
 
+// Product Types
 #[derive(Clone, Debug)]
 pub struct Product<F: AllocObject, S: AllocObject> {
     fst: CellPtr<F>,
@@ -187,5 +200,8 @@ impl<F: AllocObject + Print, S: AllocObject + Print> Print for Product<F, S> {
     }
 }
 
+// Inductive Types
 // TODO: Switch to packed implementation
 pub type Inductive<O> = Array<CellPtr<O>>;
+
+impl<O: AllocObject> AllocObject for Negative<O> {}
