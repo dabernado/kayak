@@ -1,18 +1,18 @@
 # Kayak Abstract Syntax Tree (AST) Data Type
 
 ```
-AST :: [str + ((AST + AST) * AST)]
-Program :: [str * (AST * [str])]
+AST :: [String + ((AST + AST) * AST)]
+Program :: [String * (AST * [String])]
 ```
 ## Program
-- The program type is just a map from function names (`str`) to their code (`AST`, with `[str]`)
-    - The `[str]` holds the names of higher-order functions supplied to combinators in their codebase
-        - For example, `if` has an arity of 2, so the length of the `[str]` will be 2
-        - Assuming the supplied functions to `if` are referenced as `f` and `g` in its code, then the `[str]` would have a value of `["f", "g"]`
+- The program type is just a map from function names (`String`) to their code (`AST`, with `[String]`)
+    - The `[String]` holds the names of higher-order functions supplied to combinators in their codebase
+        - For example, `if` has an arity of 2, so the length of the `[String]` will be 2
+        - Assuming the supplied functions to `if` are referenced as `f` and `g` in its code, then the `[String]` would have a value of `["f", "g"]`
         - For normal functions, it will be an empty list
 
 ## AST
-### str: Functions and Combinators
+### String: Functions and Combinators
 - Functions and combinators are introduced in the AST as strings of their names, which are then executed via lookup in the `Program`'s map
     - Core functions are also defined in the AST this way, but are not present in the function map as they are executed directly by the VM
 
@@ -24,15 +24,15 @@ Program :: [str * (AST * [str])]
     - If a sum combinator, the VM will choose which of the two ASTs to execute
     - If a product combinator, both ASTs will be executed concurrently
 
-### char: separator
+### Char: separator
 - Equivalent to an `id` op, but need to be included in the AST for fully reversible compilation
 
-### str: comments
+### String: comments
 - Equivalent to an `id` op, but need to be included in the AST for fully reversible compilation
     
 
-### ([nat * str] * AST): Combinator
-- the `[nat * str]` is a map from the combinator's arity to what the supplied functions are named in its code
+### ([Nat * String] * AST): Combinator
+- the `[Nat * String]` is a map from the combinator's arity to what the supplied functions are named in its code
     - e.g., in the combinator `if f g`, 0 would map to `f` and 1 would map to `g`
 - the `AST` is the combinator's code
 - this will require a special combinator execution context inside the VM to hold the arity map
@@ -44,7 +44,7 @@ Program :: [str * (AST * [str])]
     - Homoiconicity?
 
 ### Type Information
-- Likely will be represented by a `[str * Type]`, `str` being the name of the type/function/arrow and `Type` representing its actual type
+- Likely will be represented by a `[String * Type]`, `String` being the name of the type/function/arrow and `Type` representing its actual type
 - How to implement `Type`?
     - It should be able to contain user-defined types as well
 

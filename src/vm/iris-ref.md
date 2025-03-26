@@ -10,10 +10,10 @@ a <-> b := isomorphism type
 μx.[a]   := induction type
 -a       := negative type
 
-nat  := μx.[1 + x]
-int  := (nat + nat)
-bool := (1 + 1)
-list := μx.[1 + (a * x)]
+Nat  := μx.[1 + x]
+Int  := (nat + nat)
+Bool := (1 + 1)
+List := μx.[1 + (a * x)]
 ```
 
 ### Functions
@@ -81,13 +81,13 @@ EXPN <-> COLN     	  		: 0 <-> (-a + a)
 START <-> END		  		: a <-> a
  * Denotes start/end of function; operationally equivalent to ID
 
-SEND <-> RETR				: (int * a) <-> int
+SEND <-> RETR				: (Int * a) <-> Int
  * SEND: Sends a message to another process
  * RETR: Retracts a previously sent message, causing the other process to backtrack to the point of reception
  * The id could be a machine-defined function (negative values), another process, or an IPv6 address in integer form
  * All arrows are implemented via this instruction via operating on a product type, containing the name of the arrow and its input value
 
-RECV <-> RETN				: int <-> (int * a)
+RECV <-> RETN				: Int <-> (Int * a)
  * RECV: Dequeues a message from the process' mailbox that was send by the process with id of int
  * RETN: Returns a received message to the original sender
 ```
