@@ -43,6 +43,9 @@ DIST <-> FACT     : ((a + b) * c) <-> ((a * c) + (b * c))
  * Distribute inner sum over both product values/Factor inner
  * sum into first value
 
+ABSORB <-> FACTZ  : (0 * a) <-> 0
+ * Eliminate/introduce arbitrary type in product with zero type; operationally equivalent to ID
+
 FOLD <-> UFOLD    : μx.[a/b]b <-> μx.[a]
  * Fold/unfold value into/out of an induction type
  * n = size of inductive type elements
@@ -78,28 +81,27 @@ EXPN <-> COLN     	  		: 0 <-> (-a + a)
 START <-> END		  		: a <-> a
  * Denotes start/end of function; operationally equivalent to ID
 
-SEND <-> RECV				: (a * int) <-> 1
- * Sends a message to another process, or dequeues a message from the mailbox from that process with the sender's id
+SEND <-> RETR				: (int * a) <-> int
+ * SEND: Sends a message to another process
+ * RETR: Retracts a previously sent message, causing the other process to backtrack to the point of reception
  * The id could be a machine-defined function (negative values), another process, or an IPv6 address in integer form
  * All arrows are implemented via this instruction via operating on a product type, containing the name of the arrow and its input value
 
-SPAWN f [i] <-> RETURN f [i]	: a <-> int
- * Spawns a new process returning its process id, or waits for it to terminate returning its data
- *
- * f = function to run in spawned process
- * [i] = capabilities from current process capability store to be granted to the new process
+RECV <-> RETN				: int <-> (int * a)
+ * RECV: Dequeues a message from the process' mailbox that was send by the process with id of int
+ * RETN: Returns a received message to the original sender
 ```
 
 ### Type Restrictions
 - Functions cannot be defined with negative types as input/output types
 
 ### Processes
-- Each process contains:
+- Each process object contains:
 	- The data structure it operates on
 	- An AST value containing the code it executes
-	- an object-capability store which provides fine-grained access control for the process
 	- The process id from which it was spawned
 - A process cannot kill another process which it did not spawn
+- All capabilities are contained within the process' local data structure
 
 ## Instruction Encoding
 ```
