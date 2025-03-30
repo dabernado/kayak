@@ -1,7 +1,7 @@
 # Kayak Abstract Syntax Tree (AST) Data Type
 
 ```
-AST :: [String + ((AST + AST) * AST)]
+AST :: [(String + AST) + ((AST + AST) * AST)]
 Program :: [String * (AST * [String])]
 ```
 ## Program
@@ -15,6 +15,9 @@ Program :: [String * (AST * [String])]
 ### String: Functions and Combinators
 - Functions and combinators are introduced in the AST as strings of their names, which are then executed via lookup in the `Program`'s map
     - Core functions are also defined in the AST this way, but are not present in the function map as they are executed directly by the VM
+
+### AST: Expressions
+- Concatenated functions inside parenthesis which constitute a single expression
 
 ### (AST + AST) * AST: sum/product combinator
 - The sum type on the left contains an AST

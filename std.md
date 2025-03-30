@@ -1,9 +1,12 @@
 ## Kayak Standard Library
-### Syntax (defined in compiler)
+### Syntax Examples
+- expressions
+    - `(swapp checkVals)`
+
 - numeric literals
-    - any number `n` is a function of the type `nat <-> nat`, which is composed of `n` folds
-        - example: `8` has type of `nat <-> nat` and its code is just 8 folds in succession
-        - example: `-5` is the function of `5` combined with the sym combinator, meaning it acts as 5 unfolds on a nat
+    - any number `n` is a function of the type `Nat <-> Nat`, which is composed of `n` folds
+        - example: `8` has type of `Nat <-> Nat` and its code is just 8 folds in succession
+        - example: `-5` is the function of `5` combined with the sym combinator, meaning it acts as 5 unfolds on a Nat
 
 - constants
     - constants are defined as functions with type `1 <-> a`
@@ -12,61 +15,67 @@
         - example: the `injectRight` function has a type of `a <-> a + a` and is implemented as follows:
         ```
         injectRight :: a <-> (a + a)
-        injectRight = uniti (just, id) distrib {unite, unite}
+        injectRight = uniti (just, id) distrib (unite | unite)
         ```
     - isorecursive type constants compile down to use the combinator `make`
-        - example: `make "test"` has a type of `1 <-> str`
+        - example: `make "test"` has a type of `1 <-> String`
     - adding the sym character before a constant implements its inverse
     - constant delimiters
         - strings: ""
         - nats/integers: (-)n
         - chars: '
         - lists: []
-        - everything else: \`\`
+        - quotes: \`\`
 
     - nats:
     ```
-    ID :: 1 <-> nat
+    ID :: 1 <-> Nat
     ID = 8
     ```
         - chars:
         ```
-        CHAR :: 1 <-> char
-        char = 'h
+        CHAR :: 1 <-> Char
+        CHAR = 'h
         ```
 
     - sums:
     ```
-    SUM_RIGHT :: 1 <-> (nat + 1)
-    SUM_RIGHT = `right ()`
+    SUM_RIGHT :: 1 <-> (Nat + 1)
+    SUM_RIGHT = right id
     ```
         - booleans:
         ```
-        FLAG :: 1 <->> bool
-        FLAG = `false`
+        FLAG :: 1 <->> Bool
+        FLAG = false
         ```
         - integers:
         ```
-        KEY :: 1 <-> int
+        KEY :: 1 <-> Int
         KEY = -24
         ```
 
     - products:
     ```
-    NUM_PAIR :: 1 <-> (nat * nat)
-    NUM_PAIR =  `(4, 6)`
+    NUM_PAIR :: 1 <-> (Nat * Nat)
+    NUM_PAIR = uniti (4, 6)
     ```
 
     - lists:
     ```
-    NUM_LIST :: 1 <-> [nat]
+    NUM_LIST :: 1 <-> [Nat]
     NUM_LIST = [0 1 2 3 4]
     ```
         - strings: 
         ```
-        USER :: 1 <-> str
+        USER :: 1 <-> String
         USER = "username"
         ```
+    
+    - quotations:
+    ```
+    MY_CODE :: 1 <-> AST
+    MY_CODE = `swaps (id | verify)`
+    ```
 
 - function definitions
     ```
@@ -78,7 +87,7 @@
     ```
     trace f :: b <-> c
         where f :: (a + b) <-> (a + c)
-    trace f = zeroi {expn, id} assocrs {id, f} assocls {coln, id} zeroe
+    trace f = zeroi (expn | id) assocrs (id | f) assocls (coln | id) zeroe
     ```
 
 - arrow definitions
@@ -87,15 +96,15 @@
     deleteVal = ~myFunc >> delete
     ```
 - type definitions
-    - any type name which cannot be resolved is automatically instantiated as a polymorphic type variable
+    - any type name which stars with a lowercase character is instantiated as a polymorphic type variable
         - type errors come from inside a function where operations are attempted on an unknown type
     ```
-    Map :: [str * nat]
-    Result :: (t + e)   { with polymorphism }
+    Map :: [Key * Value]
+    Result t e :: (t + e)   // with polymorphism
     ```
 - object capabilities
     ```
-    sendTCP :: (a * (int.NetWrite * int.NetRead)) ~> (Result * (int.NetWrite * int.NetRead))
+    sendTCP :: (a * (Int.NetWrite * Int.NetRead)) ~> (Result * (Int.NetWrite * Int.NetRead))
     sendTCP = ...
     ```
 - comments
@@ -107,20 +116,21 @@
      * comment
     */
     ```
+- macros
+    - ???
 
 ### Core Types (defined in compiler)
 - `0` (zero)
 - `1` (unit)
-- `a + b` (sums)
-- `a * b` (products)
-- `[a]` (lists)
-- `nat` (natural numbers)
-- `int` (nat + nat)
-- `char` (nat)
-- `bool` (1 + 1)
-- `str` ([char])
 - `a <-> b` (isomorphisms)
 - `a ~> b` (arrows)
+- `a + b` (sums)
+- `a * b` (products)
+- `-a` (negative types)
+- `1/a` (fractional types)
+- `?a` (unobserved values)
+- `[a]` (lists)
+- `Nat` (natural numbers)
 
 ### Core Functions (defined in compiler)
 - `id`
@@ -132,42 +142,31 @@
 - `assocrp`, `assoclp`
 - `absorbz`, `factorz`
 - `distrib`, `factor`
+- `expn`, `coln`
+- `expf`, `colf`
 - `fold`, `unfold`
     - fold/unfold examples with values:
     ```
-    1 + nat <-> nat:
+    1 + Nat <-> Nat:
         left () <-> 0
 
-    1 + [nat] <-> [nat]:
+    1 + [Nat] <-> [Nat]:
         left () <-> []
         right (5, []) <-> [5]
     ```
-- `expn`, `coln`
+- `quote`, `dequote`
+    - converting code from a `Func a b` to an `AST`, and vice versa
+    - needs to be a core instruction?
+        - can't execute the code without introducing it into a process' AST even with higher-order functions
 
 ### Core Combinators (defined in compiler)
-- `{ , }` (sum combinator)
+- `( | )` (sum combinator)
 - `( , )` (product combinator)
-- `-f`
+- `<-f`
     - sym combinator, inverts the following function
     - compiles to the function's AST inverse or the inverse of `f` if `f` is a core function
-- `reflect f`, `reify f`
-    - has type `(1 + Error) <-> (AST + Error)` and `(AST + Error) <-> (1 + Error)`, respectively
-    - `reflect` takes `f` and introduces its AST into the data structure as the first value of a product type
-        - `f` is removed from the process' AST and cannot be called after reflection until it is reified again
-    - `reify` takes an AST and binds it as a function to the name `f`
-    - how to implement??
-        - likely needs its own instruction
 
 ### Core Arrows (dynamically defined in compiler)
-- `send`, `recv`
-    - takes a product of a processes' address and a value
-    - `send` sends the value as a message to the process, replacing it with a unit value
-    - `recv` deques a message out of the processes mailbox and replaces a unit value with it
-- `create`, `erase`
-    - creates or deletes a value of an arbitrary type
-    - all constants are based on the use of the `create` arrow
-    - depending on the hypocomputation, `create` and `erase` may be implemented as a `recv` or `send` either from/to another process or from/to create/erase functions implemented by the VM
-        - use of these VM functions require the process to own `Create` and `Erase` capabilities, respectively
 
 ### Core Arrow Combinators (defined in compiler)
 - `>>`
@@ -180,6 +179,14 @@
 - `left a`
     - applies arrow `a` to a left value of a sum type
 
+### Types
+- `Int :: (Nat + Nat)`
+- `Char :: Nat`
+- `Bool :: (1 + 1)`
+- `String :: [Char]`
+- `Func a b :: (1/a * ?b)`
+    - higher order functions as represented by a fraction/unobserved value pair
+
 ### Functions
 - `just`
     - injects a value of type `a` into a type of `1 + a`
@@ -187,57 +194,95 @@
     - important: `-just` on a value of `left ()` is non-terminating
 - `add`, `sub`
     - takes a product of two nats and adds/subtracts the first nat to/from the second one
+- `true`
+    - takes unit value and turns it into boolean value of true
+    - defined as `just swaps`
+- `false`
+    - takes unit value and turns it into boolean value of false
+    - defined as `just`
+- `send`, `recv`
+    - abstraction over message passing via a communication channel established by a fraction/unobserved value pair
+    - defined as ???
 
 ### Combinators
 - `trace f`
     - additive trace, implements looping
     - defined as `zeroi (expn | id) assocrs (id | f) assocls (coln | id) zeroe`
+- `search f`
+    - multiplicative trace, implements constraint search
+    - defined as `uniti (expf, id) assocrp (id, f) assoclp (colf, id) unite`
 - `neg f`
     - transforms the type of `f` from `a <-> b` to `-a <-> -b`
     - defined as `???`
+- `inv f`
+    - transforms the type of `f` from `a <-> b` to `1/a <-> 1/b`
+    - defined as `???`
+- `lift f`
+    - takes `f` and lifts it into a higher-order function, has type of `1 <-> Func a b`
+    - defined as `expf (id, f)`
 - `if-else (f) (g)`
-    - if-statement which takes `(bool * a)` as an argument, and applies f on a if the bool is `true` and g if the bool is `false`
+    - if-statement which takes `(Bool * a)` as an argument, and applies f on a if the bool is `true` and g if the bool is `false`
     - defined as `distrib ((id, f) | (id, g)) factor`
+- `left`, `right`
+    - takes the following constant and wraps it in a left-handed or right-handed sum value
+    - defined as `f just swaps` and `f just`, respectively
 - `make v`
     - creates an isorecursive type of value `v` out of a unit value; `v` is not a function and must be value notation
     - defined as ???
-    - example: injecting a `str` into a `str + ((AST + AST) * AST)` when compiling text into an `AST` type can be done via the following steps:
-        - `just swaps` on the string to get `str + 1`
-        - `make []` on right hand of sum combinator to get `str + AST`
-        - `uniti` on right hand of sum combinator to get `str + (1 * AST)`
-        - `just` on first part of product combinator to get `str + ((1 + 1) * AST)`
-        - `make []` on both hands of the inner sum combinator to get `str + ((AST + AST) * AST)`
-        - note: not important what constant is provided to `make` since that arm of the computation will not be executed because we already have a value of `str`, soon to be `left (str)`
+    - example: injecting a `String` into a `(String + AST) + ((AST + AST) * AST)` when compiling text into an `AST` type:
+    ```
+    stringToOp :: String <-> (String + AST) + ((AST + AST) * AST)
+    stringToOp =
+        just swaps
+        (id | make [])
+        just swaps
+        (id | make [])
+        (id | uniti)
+        (id | (just, id))
+        (id | ((make [] | make []), id))
+
+    ```
+        - `just swaps` on the string to get `String + 1`
+        - `make []` on right hand of sum combinator to get `String + AST`
+        - `just swaps` to get `(String + AST) + 1`
+        - `make []` on right hand of sum combinator to get `(String + AST) + AST`
+        - `uniti` on right hand of sum combinator to get `(String + AST) + (1 * AST)`
+        - `just` on first part of product combinator to get `(String + AST) + ((1 + 1) * AST)`
+        - `make []` on both hands of the inner sum combinator to get `(String + AST) + ((AST + AST) * AST)`
+        - note: not important what constant is provided to `make` since that arm of the computation will not be executed because we already have a value of `String`, soon to be `left (String)`
+- `shift k e`, `reset`
+    - `shift` captures `e` as a delimited continuation and binds it to function name `k`
+    - `reset` delimits the continuation
+    - defined as ???
 
 ### Arrows
+- `create`, `erase`
+    - creates or deletes a value of an arbitrary type
+    - all constants are based on the use of the `create` arrow
+    - depending on the hypocomputation, `create` and `erase` may be implemented as a `recv` or `send` either from/to another process or from/to create/erase functions implemented by the VM
+    - `Int.Create` and `Int.Erase` capabilities needed for these arrows?
 
 ### Arrow Combinators
 - `second a`
     - defined as `(arr swapp) >> first a >> (arr swapp)`
 - `right a`
     - defined as `(arr swaps) >> left a >> (arr swaps)`
-- `spawn a`
-    - has type `(a * AST) ~> (int * int.Kill)`
-        - `(a * AST)` represents the data the new process should operate on and the program it should execute
-        - `int` is the ID of the new process
-        - `int.Kill` is an int value representing a one-time capability required for killing the process and returning its data
-    - defined as:
-    ```
-    spawn a :: (a * AST) ~> (int * int.Kill)
-        where a :: a ~> b
-    spawn = ~uniti >> first n >> send >> recv >> first -n >> ~unite
-    ```
-        - `n` being the id of the VM-defined function for spawning new processes
-    - when creating a process, the VM builds a `Program` by copying `a`'s AST and creates the new process with it
-    - the VM grants the current process a `int.Kill` capability after spawning the new one
-- `kill`
-    - has type `int.Kill ~> (a * AST)`
 
-### High-level Language Constructs
-#### Combinators
-- Combinators are functions that take a function as an argument and apply them somewhere in their body
+### Object Capabilities
+- Object capabilities are a reference to some kind of resource represented as a type value, usually `Int`
+    - They are represented in type annotations by `.Cap` format, though this has no real operational semantics and is mainly used for readability
+- Capabilities are only used in arrows, especially I/O arrows
+- An `Int` value passed as a capability to an arrow can reference either a VM-defined function or the mailbox of another process
+    - VM function ids are always negative, while process ids are always positive
+    - The programmer can check if a capability is a function id or a process id via the sum combinator
+- VM function ids and process ids are interchangable, allowing for processes to be sandbox by other controlling processes
+    - example: a running process may utilize `reflect` but wasn't granted a capability which references the VM reflect function, so it instead uses the id of a process which does have that capability and which can handle the request of the sandboxed process however it likes
+- List of object capabilities:
+    - `Int.Kill`: killing a child process
+- Does the programmer need to be able to define its own object capability types?
 
-#### Computational Reflection
+## High-level Language Constructs
+### Computational Reflection
 - Three dimensions of reflection
     - ante/post computation (generation/quotation)
         - "ante" being some program that modifies/generates code
@@ -268,30 +313,6 @@
 - How will code be able to modify itself while its running?
     - reify itself into AST, make changes and then reflect into the AST?
 - How can implement the three dimensions of reflection in a reversible manner?
-- Should reflection be restricted to equivalences between programs?
 
-#### Reversible Concurrency + Distributed Computing
-- Implement with with actor model send/receive arrows...
-    - this is more robust and extensible than the signal model
-    - each message needs to have its sender id associated with it to make this reversible
-    - each process has a list of process ids with which it can use to communicate
-        - process ids can in effect act as capabilities (syndicated actor model)
-- ...or rstructures-style named signals?
-
-#### Arrows
-- Arrows generally can be compiled down from a higher-level language into the VM bytecode, given that the language runtime abstracts these information effects
-    - example: deleting information sends the data to an "information bank"
-- The exception would be I/O operations, such as reading/writing from a filesystem or sending/receiving data over a network; these arrows are compiled down to calls to machine-defined functions
-
-#### Optical Programming
-- Optics (lenses, prisms, etc.) are the way to go for high-level reversible programming
-- "Optics and Type Equivalences" explores them in relation to James' calculus
-- Also describes 'equivalences between equivalences'
-    - Is not true reflection because it is only between functions that are structurally equivalent, not just functions that have the same type
-    - Would be useful for optimizing though, explored more thoroughly in the "Embracing the Laws of Physics" paper
-
-#### Delimited Continuations
-- yield/run
-
-#### Coroutines
+### Coroutines
 - implemented via negative types

@@ -7,8 +7,10 @@
 a <-> b := isomorphism type
 (a * b) := product type
 (a + b) := sum type
-μx.[a]   := induction type
--a       := negative type
+μx.[a]  := induction type
+-a      := negative type
+1/a		:= fractional type
+?a		:= unobserved value
 
 Nat  := μx.[1 + x]
 Int  := (nat + nat)
@@ -75,21 +77,12 @@ FOLD <-> UFOLD    : μx.[a/b]b <-> μx.[a]
 ```
 EXPN <-> COLN     	  		: 0 <-> (-a + a)
  * Reverse type sign and direction of execution
- *
- * n = number of types in each side of the sum
+
+EXPF <-> COLF     	  		: 1 <-> (1/a * ?a)
+ * Create an unobserved value and its constraint
 
 START <-> END		  		: a <-> a
  * Denotes start/end of function; operationally equivalent to ID
-
-SEND <-> RETR				: (Int * a) <-> Int
- * SEND: Sends a message to another process
- * RETR: Retracts a previously sent message, causing the other process to backtrack to the point of reception
- * The id could be a machine-defined function (negative values), another process, or an IPv6 address in integer form
- * All arrows are implemented via this instruction via operating on a product type, containing the name of the arrow and its input value
-
-RECV <-> RETN				: Int <-> (Int * a)
- * RECV: Dequeues a message from the process' mailbox that was send by the process with id of int
- * RETN: Returns a received message to the original sender
 ```
 
 ### Type Restrictions
@@ -99,8 +92,7 @@ RECV <-> RETN				: Int <-> (Int * a)
 - Each process object contains:
 	- The data structure it operates on
 	- An AST value containing the code it executes
-	- The process id from which it was spawned
-- A process cannot kill another process which it did not spawn
+	- A state machine for executing the AST, including a context stack and AST index
 - All capabilities are contained within the process' local data structure
 
 ## Instruction Encoding
