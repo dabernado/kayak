@@ -19,7 +19,7 @@
         ```
     - isorecursive type constants compile down to use the combinator `make`
         - example: `make "test"` has a type of `1 <-> String`
-    - adding the sym character before a constant implements its inverse
+    - adding the sym character before a constant implements its inverse and is used for "deallocating" constants
     - constant delimiters
         - strings: ""
         - nats/integers: (-)n
@@ -45,7 +45,7 @@
     ```
         - booleans:
         ```
-        FLAG :: 1 <->> Bool
+        FLAG :: 1 <-> Bool
         FLAG = false
         ```
         - integers:
@@ -76,6 +76,13 @@
     MY_CODE :: 1 <-> AST
     MY_CODE = `swaps (id | verify)`
     ```
+        - for quotations, the interpreter will make a recursive call to itself to transform the text into an AST data type
+        - antiquotations:
+        ```
+        splice f :: 1 <-> AST
+            where f :: a <-> b
+        splice f = `uniti swapp (^f, just swaps)`
+        ```
 
 - function definitions
     ```
@@ -92,8 +99,8 @@
 
 - arrow definitions
     ```
-    deleteVal :: a ~> 1
-    deleteVal = ~myFunc >> delete
+    deleteVal :: (a * a) ~> 1
+    deleteVal = first (arr myFunc) >> second myArrow >> delete
     ```
 - type definitions
     - any type name which stars with a lowercase character is instantiated as a polymorphic type variable
@@ -104,7 +111,7 @@
     ```
 - object capabilities
     ```
-    sendTCP :: (a * (Int.NetWrite * Int.NetRead)) ~> (Result * (Int.NetWrite * Int.NetRead))
+    sendTCP :: {NetWrite, NetRead} a ~> Result
     sendTCP = ...
     ```
 - comments
@@ -154,30 +161,36 @@
         left () <-> []
         right (5, []) <-> [5]
     ```
-- `quote`, `dequote`
-    - converting code from a `Func a b` to an `AST`, and vice versa
-    - needs to be a core instruction?
-        - can't execute the code without introducing it into a process' AST even with higher-order functions
 
 ### Core Combinators (defined in compiler)
 - `( | )` (sum combinator)
 - `( , )` (product combinator)
-- `<-f`
+- `~f`
     - sym combinator, inverts the following function
     - compiles to the function's AST inverse or the inverse of `f` if `f` is a core function
+- `quote f`, `dequote f`
+    - `quote` retrieves the AST of `f` from the process' program, and `dequote` stores it there under the name `f`
+        - has type `1 <-> AST`
+    - `f` cannot be called after quotation without being dequoted first
+    - needs to be a core instruction?
 
 ### Core Arrows (dynamically defined in compiler)
 
 ### Core Arrow Combinators (defined in compiler)
 - `>>`
     - composes two arrows together
-    - example: `create >> delete`
-- `~f`
+    - example: `create >> sendTCP`
+- `arr f`
     - changes type of iso `f` to an arrow so that it can be sequenced with arrows
 - `first a`
     - applies arrow `a` to the first value of a product type
 - `left a`
     - applies arrow `a` to a left value of a sum type
+- `create`, `erase`
+    - creates or deletes a value of an arbitrary type
+    - all constants are based on the use of the `create` arrow
+    - depending on the hypocomputation, `create` and `erase` may be implemented as a `recv` or `send` either from/to another process or from/to create/erase functions implemented by the VM
+    - `Int.Create` and `Int.Erase` capabilities needed for these arrows?
 
 ### Types
 - `Int :: (Nat + Nat)`
@@ -191,7 +204,7 @@
 - `just`
     - injects a value of type `a` into a type of `1 + a`
     - defined as ???
-    - important: `-just` on a value of `left ()` is non-terminating
+    - important: `~just` on a value of `left ()` is non-terminating
 - `add`, `sub`
     - takes a product of two nats and adds/subtracts the first nat to/from the second one
 - `true`
@@ -200,6 +213,12 @@
 - `false`
     - takes unit value and turns it into boolean value of false
     - defined as `just`
+- `eval`, `reval`
+    - applies quotation to a given argument
+    - has type `(AST * a) <-> (AST * b)`
+- `evalArr`
+    - applies quoted arrow to a given argument
+    - has type `(AST * a) ~> (AST * b)`
 - `send`, `recv`
     - abstraction over message passing via a communication channel established by a fraction/unobserved value pair
     - defined as ???
@@ -213,7 +232,20 @@
     - defined as `uniti (expf, id) assocrp (id, f) assoclp (colf, id) unite`
 - `neg f`
     - transforms the type of `f` from `a <-> b` to `-a <-> -b`
-    - defined as `???`
+    - defined as:
+    ```
+    zeroi
+    (expn | id)
+    assocrs
+    (id
+    | swaps
+      coln
+      (id | f)
+      expn swaps)
+    assocls
+    (coln | id)
+    zeroe
+    ```
 - `inv f`
     - transforms the type of `f` from `a <-> b` to `1/a <-> 1/b`
     - defined as `???`
@@ -254,13 +286,19 @@
     - `shift` captures `e` as a delimited continuation and binds it to function name `k`
     - `reset` delimits the continuation
     - defined as ???
+- `spawn f g`
+    - splices `f` and `g` into a quotation that establishes the necessary amount of typed communication channels between the functions listed before running them as subcomputations
+        - searches through each subprogram to find `send` and `recv` calls to do this
+    - subsumes use case of fore/back computations, as dividing up code between core logic and I/O handling is best practice
+        - also subsumes sandboxing arrows, since the programmer will want to write their own I/O handlers for that too
+    - how to handle message passing between more than two subcomputations?
+        - build it like a tree; the parent computation of two communicating subcomputations can also communicate with another computation
+- `sandbox a`
+    - takes arrow which utilizes object capabilities and produces a quotation with all I/O arrow calls with `send` and `recv`
 
 ### Arrows
-- `create`, `erase`
-    - creates or deletes a value of an arbitrary type
-    - all constants are based on the use of the `create` arrow
-    - depending on the hypocomputation, `create` and `erase` may be implemented as a `recv` or `send` either from/to another process or from/to create/erase functions implemented by the VM
-    - `Int.Create` and `Int.Erase` capabilities needed for these arrows?
+- `clone`
+    - clones a value of type `a`, resulting in a value of type `(a * a)`
 
 ### Arrow Combinators
 - `second a`
@@ -270,16 +308,11 @@
 
 ### Object Capabilities
 - Object capabilities are a reference to some kind of resource represented as a type value, usually `Int`
-    - They are represented in type annotations by `.Cap` format, though this has no real operational semantics and is mainly used for readability
+    - They are represented in arrow type annotations by `{}` format, but are passed implicitly to arrows as arguments
 - Capabilities are only used in arrows, especially I/O arrows
-- An `Int` value passed as a capability to an arrow can reference either a VM-defined function or the mailbox of another process
-    - VM function ids are always negative, while process ids are always positive
-    - The programmer can check if a capability is a function id or a process id via the sum combinator
-- VM function ids and process ids are interchangable, allowing for processes to be sandbox by other controlling processes
-    - example: a running process may utilize `reflect` but wasn't granted a capability which references the VM reflect function, so it instead uses the id of a process which does have that capability and which can handle the request of the sandboxed process however it likes
-- List of object capabilities:
-    - `Int.Kill`: killing a child process
+- Capability values are first-class and are passed through a program's data flow with the rest of the data structures
 - Does the programmer need to be able to define its own object capability types?
+    - This will definitely be necessary for FFI
 
 ## High-level Language Constructs
 ### Computational Reflection
@@ -287,32 +320,24 @@
     - ante/post computation (generation/quotation)
         - "ante" being some program that modifies/generates code
         - "post" being the modified/generated code that is ran, represented as data or actual code
-        - this can be implemented via a macro system + `reflect/reify` iso on a code-as-data structure
-            - could these be one and the same via an abstract syntax tree type?
+        - this can be implemented via a macro system + `quote/unquote` iso
     - hypo/hyper computation (implementation/interpretation)
         - "hypo" being some program that implements lower-level constructs in some "hypercomputation"
             - e.g., a program that decides what kind of memory allocation scheme a program uses
             - e.g., a program that decides which effect handlers are used by the program it implements
         - "hyper" being the program that a "hypocomputation" implements
-        - this can be implemented via evaluative reflection + implementation protocols
-            - hyperprograms can send arrow arguments as messages to a hypoprogram running on a separate process
-                - the hypoprogram can dynamically decide which I/O arrows to apply
-                - this corresponds to `simulate`ing a program and its side effects
+        - this can be implemented via processing ASTs before an `unquote` on different platforms
+            - e.g., migrating from linux to sel4, or to a distributed cluster
+            - arrow calls can be matched against and replaced, as the VM essentially represents a hypocomputation already
     - fore/back computation (manifestation/control)
         - "fore" being the base program that a user wants to run and interact with
         - "back" being the metaprogram that controls the "foreprogram"
             - a 'degenerate, one-shot' example would be a config file that is loaded at runtime
-        - this can be implemented via a more flexible arrow system
-            - controller process can send live control inputs to another running process
-- Migration
-    - updating code in a process while it is still running
-    - moving a process from one machine to another while it is still running
-- What does "code-as-data" look like in Kayak?
-    - need an AST data type, likely an inductive of a sum type
-    - should we rewrite the VM to operate on this type?
-- How will code be able to modify itself while its running?
-    - reify itself into AST, make changes and then reflect into the AST?
-- How can implement the three dimensions of reflection in a reversible manner?
+        - this can be implemented via message passing between subcomputions
+            - one subcomputation represents the forecomputation and receives all its inputs from the other
+            - the other is the backcomputation and receives live inputs via arrow functions
+- Hot code migration
+    - Do we need some kind of versioning system for live code updates?
 
 ### Coroutines
 - implemented via negative types

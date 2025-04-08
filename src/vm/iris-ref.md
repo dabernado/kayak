@@ -93,7 +93,7 @@ START <-> END		  		: a <-> a
 	- The data structure it operates on
 	- An AST value containing the code it executes
 	- A state machine for executing the AST, including a context stack and AST index
-- All capabilities are contained within the process' local data structure
+- All capabilities are contained within the process' local data structure as first-class objects
 
 ## Instruction Encoding
 ```

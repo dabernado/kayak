@@ -6,7 +6,7 @@ Program :: [String * (AST * [String])]
 ```
 ## Program
 - The program type is just a map from function names (`String`) to their code (`AST`, with `[String]`)
-    - The `[String]` holds the names of higher-order functions supplied to combinators in their codebase
+    - The `[String]` holds the names of functions supplied to combinators in their codebase
         - For example, `if` has an arity of 2, so the length of the `[String]` will be 2
         - Assuming the supplied functions to `if` are referenced as `f` and `g` in its code, then the `[String]` would have a value of `["f", "g"]`
         - For normal functions, it will be an empty list
@@ -43,13 +43,25 @@ Program :: [String * (AST * [String])]
 ## Metadata
 - All information in the original code needs to be preserved in order to enable fully reversible compilation between code-as-text and the AST
 - How to make code-as-text reversible between the AST?
-    - Do we need to rethink the syntax?
-    - Homoiconicity?
+    - Rethink the "code editor"; programmer must be editing the AST itself
+        - no text, perhaps circuitry instead?
 
 ### Type Information
 - Likely will be represented by a `[String * Type]`, `String` being the name of the type/function/arrow and `Type` representing its actual type
 - How to implement `Type`?
-    - It should be able to contain user-defined types as well
+    ```
+    Type :: (
+        (String + (1 + 1))                  // (User-defined type + (1 + 0))
+        + ((Type * Type) + (Type * Type))   // (Product + Sum)
+        + ((Type * Type) + (Type * Type))   // (Iso + Arrow)
+        + (Type + Type)                     // (-a + 1/a)
+        + Type                              // Recursive
+    )
+    ````
 
 ### Separators
-- Spaces, tabs, newlines, and comments
+```
+Separator :: [(Nat * Nat) * String]
+```
+- `Nat * Nat` represents line and column where separator begins
+- `String` is the separator which could be a space, tab, newline, comment, or combination of any/all four
