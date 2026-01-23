@@ -4,6 +4,7 @@
 AST :: [(String + AST) + ((AST + AST) * AST)]
 Program :: [String * (AST * [String])]
 ```
+
 ## Program
 - The program type is just a map from function names (`String`) to their code (`AST`, with `[String]`)
     - The `[String]` holds the names of functions supplied to combinators in their codebase

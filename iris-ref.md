@@ -86,14 +86,7 @@ START <-> END		  		: a <-> a
 ```
 
 ### Type Restrictions
-- Functions cannot be defined with negative types as input/output types
-
-### Processes
-- Each process object contains:
-	- The data structure it operates on
-	- An AST value containing the code it executes
-	- A state machine for executing the AST, including a context stack and AST index
-- All capabilities are contained within the process' local data structure as first-class objects
+- Functions cannot be defined with negative or fraction types in input/output
 
 ## Instruction Encoding
 ```
